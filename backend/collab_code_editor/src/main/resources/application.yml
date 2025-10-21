@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/collab_editor?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: 2004
+  jpa:
+    hibernate:
+      ddl-auto: none    #because we are using schema.sql
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+
+server:
+  port: 8080
+
+jwt:
+  secret: change_me_please_change_me_please_1234567890
+  access:
+    expiration: 1800000       # 30 min
+  refresh:
+    expiration: 604800000     # 7 days
