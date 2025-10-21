@@ -1,21 +1,31 @@
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/collab_editor?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: root
-    password: 2004
-  jpa:
-    hibernate:
-      ddl-auto: none    #because we are using schema.sql
-    show-sql: true
-    properties:
-      hibernate.format_sql: true
-
 server:
   port: 8080
 
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/collab_editor?createDatabaseIfNotExist=true
+    username: root
+    password: 2004
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update           # auto-creates tables based on entities
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  jackson:
+    serialization:
+      INDENT_OUTPUT: true
+
 jwt:
-  secret: change_me_please_change_me_please_1234567890
+  secret: "ReplaceThisSecretKeyWithAStrongOne123!"
   access:
-    expiration: 1800000       # 30 min
+    expiration: 900000           # 15 minutes
   refresh:
-    expiration: 604800000     # 7 days
+    expiration: 604800000        # 7 days
+
+file:
+  storage-path: ./code-editor-storage/
