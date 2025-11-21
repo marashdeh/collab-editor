@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/collab_editor?createDatabaseIfNotExist=true
+    username: root
+    password: 2004
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update   # ✅ let Hibernate drop & recreate all tables
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  jackson:
+    serialization:
+      INDENT_OUTPUT: true
+
+jwt:
+  secret: "ReplaceThisSecretKeyWithAStrongOne123!ChangeMe_Long_Random_32B+"
+  access:
+    expiration: 900000           # 15 minutes
+  refresh:
+    expiration: 604800000        # 7 days
+
+file:
+  storage-path: ./code-editor-storage/
