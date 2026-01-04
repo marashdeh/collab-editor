@@ -1,6 +1,9 @@
 package com.example.collab_code_editor.infrastructure.serviceImpl;
 
 import com.example.collab_code_editor.core.dto.InvitationDto;
+import com.example.collab_code_editor.core.exception.ProjectNotFoundException;
+import com.example.collab_code_editor.core.exception.UnauthorizedActionException;
+import com.example.collab_code_editor.core.exception.UserNotFoundException;
 import com.example.collab_code_editor.core.model.*;
 import com.example.collab_code_editor.core.service.InvitationService;
 import com.example.collab_code_editor.infrastructure.repository.CollaboratorRepository;
@@ -28,18 +31,22 @@ public class InvitationServiceImpl implements InvitationService {
         Long inviterId = invitationDto.getInviterId();
         String email = invitationDto.getEmail();
 
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
-        User inviter = userRepository.findById(inviterId)
-                .orElseThrow(() -> new RuntimeException("Inviter not found"));
+        if (userRepository.findByEmail(email).isEmpty()){
+            throw new UserNotFoundException("the invited user not found");
+        }
 
-        // ✅ Check if inviter is OWNER
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+        User inviter = userRepository.findById(inviterId)
+                .orElseThrow(() -> new UserNotFoundException("Inviter not found"));
+
+        //  Check if inviter is OWNER
         Collaborator collaborator = collaboratorRepository.findByUserIdAndProjectId(inviterId, projectId)
-                .orElseThrow(() -> new RuntimeException("Inviter is not part of this project"));
+                .orElseThrow(() -> new UnauthorizedActionException("Inviter is not part of this project"));
         if (collaborator.getRole() != CollaboratorRole.OWNER)
             throw new RuntimeException("Only project owner can send invitations");
 
-        // ✅ Create the invitation
+        //  Create the invitation
         Invitation invitation = new Invitation();
         invitation.setEmail(email);
         invitation.setInviter(inviter);
@@ -80,7 +87,7 @@ public class InvitationServiceImpl implements InvitationService {
 
     @Override
     public List<InvitationDto> getInvitationsForUser(String email) {
-        return invitationRepository.findByEmail(email)
+        return invitationRepository.findByEmailAndStatus(email, InvitationStatus.PENDING)
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -88,7 +95,7 @@ public class InvitationServiceImpl implements InvitationService {
 
     private InvitationDto toDto(Invitation invitation) {
         return InvitationDto.builder()
-                .id(invitation.getId()) // ✅ fixed
+                .id(invitation.getId())
                 .email(invitation.getEmail())
                 .status(invitation.getStatus())
                 .sentAt(invitation.getSentAt())

@@ -11,7 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Table(name = "collaborators")
+@Table(name = "collaborators", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "project_id"})
+})
 public class Collaborator {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

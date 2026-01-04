@@ -1,9 +1,8 @@
 package com.example.collab_code_editor.infrastructure.serviceImpl;
 
-import com.example.collab_code_editor.config.security.AccessValidator;
 import com.example.collab_code_editor.core.dto.ProjectDto;
 import com.example.collab_code_editor.core.exception.ProjectNotFoundException;
-import com.example.collab_code_editor.core.exception.UserNotFoundException;
+import com.example.collab_code_editor.core.exception.UnauthorizedActionException;
 import com.example.collab_code_editor.core.model.Collaborator;
 import com.example.collab_code_editor.core.model.CollaboratorRole;
 import com.example.collab_code_editor.core.model.Project;
@@ -14,6 +13,7 @@ import com.example.collab_code_editor.infrastructure.repository.ProjectRepositor
 import com.example.collab_code_editor.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,55 +23,65 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
 
-    private final CollaboratorRepository collaboratorRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
-    private final AccessValidator accessValidator;
+    private final CollaboratorRepository collaboratorRepository;
 
     @Override
+    @Transactional
     public ProjectDto createProject(ProjectDto dto, Long ownerId) {
+        //  Check for duplicates first
+        if (projectRepository.existsByNameAndOwnerId(dto.getName(), ownerId)) {
+            throw new RuntimeException("Project with this name already exists!");
+        }
+
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(()-> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
 
         Project project = new Project();
         project.setName(dto.getName());
         project.setDescription(dto.getDescription());
         project.setOwner(owner);
         project.setCreatedAt(LocalDateTime.now());
-        projectRepository.save(project);
 
-        Collaborator ownerCollaborator = new Collaborator();
-        ownerCollaborator.setProject(project);
-        ownerCollaborator.setUser(owner);
-        ownerCollaborator.setRole(CollaboratorRole.OWNER);
-        collaboratorRepository.save(ownerCollaborator);
+        Project savedProject = projectRepository.save(project);
 
-        return new ProjectDto(project.getId(),project.getName(), project.getDescription());
+        Collaborator collaborator = new Collaborator();
+        collaborator.setProject(savedProject);
+        collaborator.setUser(owner);
+        collaborator.setRole(CollaboratorRole.OWNER);
+        collaboratorRepository.save(collaborator);
+
+        return new ProjectDto(savedProject.getId(), savedProject.getName(), savedProject.getDescription());
     }
 
     @Override
-    public List<ProjectDto> ListUserProjects(Long ownerId) {
-        return projectRepository.findByOwnerId(ownerId)
-                .stream()
-                .map(p -> new ProjectDto(p.getId(), p.getName(), p.getDescription()))
+    public List<ProjectDto> ListUserProjects(Long userId) {
+        return collaboratorRepository.findAllByUserId(userId).stream()
+                .map(collaborator -> {
+                    Project p = collaborator.getProject();
+                    return new ProjectDto(p.getId(), p.getName(), p.getDescription());
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     public ProjectDto getProjectById(Long id) {
-        Project project = projectRepository.findById(id)
+        Project p = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
-        return new ProjectDto(project.getId(), project.getName(), project.getDescription());
+        return new ProjectDto(p.getId(), p.getName(), p.getDescription());
     }
 
     @Override
+    @Transactional
     public void deleteProject(Long projectId, Long userId) {
-        accessValidator.validateOwnerAccess(userId, projectId);
-
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException("Project not found"));
+                .orElseThrow(() -> new ProjectNotFoundException("There is no project to delete"));
 
+        if (!project.getOwner().getId().equals(userId)) {
+            throw new UnauthorizedActionException("Only the owner can delete the project");
+        }
         projectRepository.delete(project);
     }
-
 }

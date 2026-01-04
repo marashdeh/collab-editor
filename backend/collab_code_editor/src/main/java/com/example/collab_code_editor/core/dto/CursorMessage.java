@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class CursorMessage {
     private String type;
     private Long fileId;
+    private String email;
     private Long userId;
     private int line;
     private int column;

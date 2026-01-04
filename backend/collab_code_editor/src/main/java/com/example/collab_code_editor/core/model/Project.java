@@ -34,9 +34,6 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Folder> folders = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "template_id")
-    private ProjectTemplate template;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore // prevents looping back
