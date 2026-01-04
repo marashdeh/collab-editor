@@ -1,0 +1,36 @@
+﻿<div class="login-container">
+  
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+
+  <div class="login-card" [class.shake]="shakeError">
+    <h2>Welcome Back</h2>
+    <p class="subtitle">Enter your credentials to access the workspace</p>
+
+    <form (ngSubmit)="onLogin()">
+      
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" [(ngModel)]="username" name="username" placeholder="e.g. user123" required>
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" [(ngModel)]="password" name="password" placeholder="••••••••" required>
+      </div>
+
+      <div *ngIf="errorMessage" class="error-banner">
+        <span>⚠️</span> {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="isLoading" class="btn-login">
+        <span *ngIf="!isLoading">Login</span>
+        <span *ngIf="isLoading" class="loader"></span>
+      </button>
+
+      <div class="footer-links">
+        <p>Don't have an account? <a routerLink="/register">Register here</a></p>
+      </div>
+    </form>
+  </div>
+</div>

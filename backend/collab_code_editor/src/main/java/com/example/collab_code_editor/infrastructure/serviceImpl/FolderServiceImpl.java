@@ -32,7 +32,7 @@ public class FolderServiceImpl implements FolderService {
 
         if (parentId !=null){
             Folder parent = folderRepository.findById(parentId)
-                    .orElseThrow(()-> new RuntimeException("Parent folder not found"));
+                    .orElseThrow(()-> new FolderNotFoundException("Parent folder not found"));
             folder.setParent(parent);
         }
 

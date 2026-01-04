@@ -1,6 +1,7 @@
 package com.example.collab_code_editor.infrastructure.serviceImpl;
 
 import com.example.collab_code_editor.core.dto.CommentDto;
+import com.example.collab_code_editor.core.exception.UserNotFoundException;
 import com.example.collab_code_editor.core.model.Comment;
 import com.example.collab_code_editor.core.model.Discussion;
 import com.example.collab_code_editor.core.model.User;
@@ -11,11 +12,13 @@ import com.example.collab_code_editor.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
+
     private final CommentRepository commentRepository;
     private final DiscussionRepository discussionRepository;
     private final UserRepository userRepository;
@@ -24,25 +27,35 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto addComment(Long discussionId, Long userId, String content) {
         Discussion discussion = discussionRepository.findById(discussionId)
                 .orElseThrow(() -> new RuntimeException("Discussion not found"));
-        User author = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         Comment comment = new Comment();
         comment.setDiscussion(discussion);
-        comment.setAuthor(author);
+        comment.setAuthor(user);
         comment.setContent(content);
-        commentRepository.save(comment);
+        comment.setCreatedAt(LocalDateTime.now());
 
-        return new CommentDto(comment.getId(), content, author.getUsername(), comment.getCreatedAt());
+        Comment saved = commentRepository.save(comment);
+
+        return new CommentDto(
+                saved.getId(),
+                saved.getContent(),
+                saved.getAuthor().getUsername(),
+                saved.getCreatedAt()
+        );
     }
-
 
     @Override
     public List<CommentDto> getCommentsByDiscussion(Long discussionId) {
-        return commentRepository.findByDiscussionId(discussionId)
-                .stream()
-                .map(c -> new CommentDto(c.getId(), c.getContent(), c.getAuthor().getUsername(), c.getCreatedAt()))
+        return commentRepository.findByDiscussionIdOrderByCreatedAtAsc(discussionId).stream()
+                .map(c -> new CommentDto(
+                        c.getId(),
+                        c.getContent(),
+                        c.getAuthor().getUsername(),
+                        c.getCreatedAt()
+                ))
                 .toList();
     }
-
 }

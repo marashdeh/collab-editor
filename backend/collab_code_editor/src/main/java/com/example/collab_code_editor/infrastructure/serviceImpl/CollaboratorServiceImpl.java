@@ -1,6 +1,7 @@
 package com.example.collab_code_editor.infrastructure.serviceImpl;
 
 import com.example.collab_code_editor.core.dto.CollaboratorDto;
+import com.example.collab_code_editor.core.model.Collaborator;
 import com.example.collab_code_editor.core.model.CollaboratorRole;
 import com.example.collab_code_editor.core.service.CollaboratorService;
 import com.example.collab_code_editor.core.util.ColorUtil;
@@ -11,8 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.example.collab_code_editor.core.util.ColorUtil.generateColor;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class CollaboratorServiceImpl implements CollaboratorService {
 
     @Override
     public List<CollaboratorDto> getCollaboratorsByProject(Long projectId) {
-        return collaboratorRepository.findByProjectId(projectId)
+        return collaboratorRepository.findAllByProjectId(projectId)
                 .stream()
                 .map(c -> CollaboratorDto.builder()
                         .id(c.getId())
@@ -42,7 +41,8 @@ public class CollaboratorServiceImpl implements CollaboratorService {
 
     @Override
     public CollaboratorRole getRoleForUserAndProject(Long userId, Long projectId) {
-        return collaboratorRepository.findRoleByUserIdAndProjectId(userId, projectId)
-                .orElse(CollaboratorRole.MEMBER);
+        return collaboratorRepository.findByUserIdAndProjectId(userId, projectId)
+                .map(Collaborator::getRole)
+                .orElse(null);
     }
 }
